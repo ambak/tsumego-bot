@@ -1,0 +1,6 @@
+{
+	"token": "your_token",
+	"log_file": "/data/tsumego_bot.log",
+	"database": "/data/tsumego_bot.db",
+	"tsumego": "/data/tsumego"
+}

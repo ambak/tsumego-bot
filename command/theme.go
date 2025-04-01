@@ -1,6 +1,7 @@
 package command
 
 import (
+	"log"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
@@ -17,13 +18,22 @@ func Theme(s *discordgo.Session, m *discordgo.MessageCreate, argv []string, them
 				}
 			}
 			if newTheme != "" {
-				conn.Exec(`INSERT OR REPLACE INTO theme VALUES (?, ?)`, m.Author.ID, newTheme)
+				err := conn.Exec(`INSERT OR REPLACE INTO theme VALUES (?, ?)`, m.Author.ID, newTheme)
+				if err != nil {
+					log.Fatalln(err)
+				}
 				s.State.User.Mention()
-				s.ChannelMessageSendReply(m.ChannelID, "Your default theme is set to `"+newTheme+"`", m.Reference())
+				_, err = s.ChannelMessageSendReply(m.ChannelID, "Your default theme is set to `"+newTheme+"`", m.Reference())
+				if err != nil {
+					log.Fatalln(err)
+				}
 			}
 		}
 		if newTheme == "" {
-			s.ChannelMessageSend(m.ChannelID, "```\n"+strings.Join(themes, "\n")+"```")
+			_, err := s.ChannelMessageSend(m.ChannelID, "```\n"+strings.Join(themes, "\n")+"```")
+			if err != nil {
+				log.Fatalln(err)
+			}
 		}
 	}
 }

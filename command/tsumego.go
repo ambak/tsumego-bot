@@ -34,7 +34,10 @@ func Tsumego(s *discordgo.Session, m *discordgo.MessageCreate, argv []string, le
 			}
 			if !ok {
 				msg := "You must pass valid tsumego level. Example:\n`;tsumego advanced`"
-				s.ChannelMessageSendReply(channel, msg, m.Reference())
+				_, err := s.ChannelMessageSendReply(channel, msg, m.Reference())
+				if err != nil {
+					log.Fatalln(err)
+				}
 				return
 			}
 		}
@@ -69,9 +72,12 @@ func Tsumego(s *discordgo.Session, m *discordgo.MessageCreate, argv []string, le
 		log.Println("database error step", err)
 	}
 	if hasRow {
-		stmt.Scan(&theme)
+		err := stmt.Scan(&theme)
+		if err != nil {
+			log.Fatalln(err)
+		}
 	}
-
+	defer stmt.Close()
 	path := cfg.Tsumego + "/" + lvl + "/" + tsumegoName
 	part_rect, err := sgf.SgfSize(path)
 	if err != nil {
@@ -84,9 +90,15 @@ func Tsumego(s *discordgo.Session, m *discordgo.MessageCreate, argv []string, le
 	msg += "tsumegoID: `" + tsumegoID + "`"
 	out := exec.Command("python3", "sgf2image/sgf2img.py", "--start", "0",
 		"--end", "0", "--part_rect", part_rect, "--theme", theme, path, pictureName+".jpg")
-	out.Output()
+	_, err = out.Output()
+	if err != nil {
+		log.Fatalln(err)
+	}
 	fileBytes, _ := os.Open("sgf2image/" + pictureName + ".jpg")
-	s.ChannelFileSendWithMessage(channel, msg, "tsumego.jpg", fileBytes)
+	_, err = s.ChannelFileSendWithMessage(channel, msg, "tsumego.jpg", fileBytes)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	err = os.Remove("sgf2image/" + pictureName + ".jpg")
 	if err != nil {
 		log.Fatalln(err)

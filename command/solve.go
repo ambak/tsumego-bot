@@ -26,10 +26,14 @@ func Solve(s *discordgo.Session, m *discordgo.MessageCreate, levels []string,
 	}
 	if lvl == "" {
 		err = errors.New("wrong args lvl")
+		log.Println(err)
 	}
 	part_rect, err = sgf.SgfSize(cfg.Tsumego + "/" + lvl + "/" + tsumegoID[1:] + ".sgf")
 	if err != nil {
-		s.ChannelMessageSend(channel, "You must pass valid tsumegoID. Example:\n`;solve a0001`")
+		_, err := s.ChannelMessageSend(channel, "You must pass valid tsumegoID. Example:\n`;solve a0001`")
+		if err != nil {
+			log.Fatalln(err)
+		}
 		return
 	}
 	pictureName := RandStringBytesMaskImpr(10)
@@ -37,22 +41,28 @@ func Solve(s *discordgo.Session, m *discordgo.MessageCreate, levels []string,
 	path := cfg.Tsumego + "/" + lvl + "/" + tsumegoID[1:] + ".sgf"
 	out := exec.Command("python3", "sgf2image/sgf2img.py", "--start", "1", "--end", "--part_rect",
 		part_rect, "--theme", theme, path, pictureName+".jpg")
-	out.Output()
+	_, err = out.Output()
+	if err != nil {
+		log.Fatalln(err)
+	}
 	o := strings.Split(fmt.Sprint(out.Stdout), "\n")
+
+	pattern := "[0-9]* = [0-9]*"
+	re := regexp.MustCompile(pattern)
 	for _, move := range o {
-		ok, err := regexp.MatchString("[0-9]* = [0-9]*", move)
-		if err != nil {
-			continue
-		}
+		ok := re.MatchString(move)
 		if ok {
 			msg += "\n||`" + move + "`||"
 		}
 	}
 
 	fileBytes, _ := os.Open("sgf2image/" + pictureName + ".jpg")
-	s.ChannelFileSendWithMessage(channel, msg, "SPOILER_tsumego.jpg", fileBytes)
+	_, err = s.ChannelFileSendWithMessage(channel, msg, "SPOILER_tsumego.jpg", fileBytes)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	err = os.Remove("sgf2image/" + pictureName + ".jpg")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 }

@@ -1,14 +1,18 @@
 package command
 
-import "github.com/bwmarrin/discordgo"
+import (
+	"log"
+
+	"github.com/bwmarrin/discordgo"
+)
 
 const help = "```" + `
 Available commands:
 	;tsumego                Show random tsumego. Shortcut ;t
 
-	;tsumego lvl            Show tsumego at level lvl
+	;tsumego LVL            Show tsumego at level LVL
 
-	;level                  Show available levels. Shortcut lvl by using first character
+	;level                  Show available levels. Shortcut LVL by using first character
 
 	;theme                  Show available themes
 
@@ -18,9 +22,11 @@ Available commands:
 
 	;subscribe              Subscribe to get daily tsumego
 
-	;subscribe lvl          Subscribe to get daily tsumego at level lvl
+	;subscribe LVL          Subscribe to get daily tsumego at level LVL
 
 	;unsubscribe            Unsubscribe daily tsumego
+
+	;link OGS_USERNAME      Link your OSG account and your discord account
 
 Example:
 	;t e                    Show elementary tsumego
@@ -31,5 +37,8 @@ Example:
 	` + "```"
 
 func Help(s *discordgo.Session, m *discordgo.MessageCreate) {
-	s.ChannelMessageSend(m.ChannelID, help)
+	_, err := s.ChannelMessageSend(m.ChannelID, help)
+	if err != nil {
+		log.Fatalln(err)
+	}
 }

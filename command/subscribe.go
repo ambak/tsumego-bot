@@ -24,18 +24,20 @@ func Subscribe(s *discordgo.Session, m *discordgo.MessageCreate, conn *gosqlite.
 		}
 		if !ok {
 			msg := "You must pass valid tsumego level. Example:\n`;subscribe advanced`"
-			s.ChannelMessageSendReply(m.ChannelID, msg, m.Reference())
+			_, err := s.ChannelMessageSendReply(m.ChannelID, msg, m.Reference())
+			if err != nil {
+				log.Fatalln(err)
+			}
 			return
 		}
 	}
 	t := time.Now().UTC()
 	err := conn.Exec(`INSERT OR REPLACE INTO subscribe VALUES (?, ?, ?)`, m.Author.ID, t.Format(time.RFC1123), level)
 	if err != nil {
-		log.Println("database error subscribe", err)
-		panic("database error subscribe")
+		log.Fatalln("database error subscribe", err)
 	}
 	(*scheduler).RemoveByTags(m.Author.ID)
-	_, err = (*scheduler).NewJob(
+	j, err := (*scheduler).NewJob(
 		gocron.DailyJob(
 			1,
 			gocron.NewAtTimes(gocron.NewAtTime(uint(t.UTC().Hour()), uint(t.UTC().Minute()), uint(t.UTC().Second()))),
@@ -45,15 +47,20 @@ func Subscribe(s *discordgo.Session, m *discordgo.MessageCreate, conn *gosqlite.
 	)
 	if err != nil {
 		log.Fatalln(err)
-		panic("scheduler")
+	}
+	_, err = j.NextRun()
+	if err != nil {
+		log.Fatalln(err)
 	}
 
 	msg := "Thanks for subscribing.\n" +
 		"Every day you will receive a direct message with a new " +
-		"`" + level + "`" + "level tsumego " +
+		"`" + level + "`" + " level tsumego " +
 		"\nTo unsubscribe type `;unsubscribe`"
-	s.ChannelMessageSendReply(m.ChannelID, msg, m.Reference())
-
+	_, err = s.ChannelMessageSendReply(m.ChannelID, msg, m.Reference())
+	if err != nil {
+		log.Fatalln(err)
+	}
 	Tsumego(s, &discordgo.MessageCreate{}, []string{}, levels, problems, cfg, conn, themes, m.Author.ID, level)
 }
 
@@ -61,9 +68,11 @@ func Unsubscribe(s *discordgo.Session, m *discordgo.MessageCreate, conn *gosqlit
 	err := conn.Exec(`DELETE FROM subscribe WHERE name = ?`, m.Author.ID)
 	if err != nil {
 		log.Println("database error subscribe", err)
-		panic("database error subscribe")
 	}
 	(*scheduler).RemoveByTags(m.Author.ID)
 	msg := "Bye-bye"
-	s.ChannelMessageSendReply(m.ChannelID, msg, m.Reference())
+	_, err = s.ChannelMessageSendReply(m.ChannelID, msg, m.Reference())
+	if err != nil {
+		log.Fatalln(err)
+	}
 }

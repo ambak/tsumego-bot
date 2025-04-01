@@ -14,9 +14,9 @@ Uses [sgf2image](https://github.com/noword/sgf2image) to generate images.
 Available commands:
     ;tsumego                Show random tsumego. Shortcut ;t
 
-    ;tsumego lvl            Show tsumego at level lvl
+    ;tsumego LVL            Show tsumego at level LVL
 
-    ;level                  Show available levels. Shortcut lvl by using first character
+    ;level                  Show available levels. Shortcut LVL by using first character
 
     ;theme                  Show available themes
 
@@ -26,9 +26,11 @@ Available commands:
 
     ;subscribe              Subscribe to get daily tsumego
 
-    ;subscribe lvl          Subscribe to get daily tsumego at level lvl
+    ;subscribe LVL          Subscribe to get daily tsumego at level LVL
 
     ;unsubscribe            Unsubscribe daily tsumego
+
+    ;link OGS_USERNAME      Link your OSG account and your discord account
 
 Example:
     ;t e                    Show elementary tsumego
@@ -36,6 +38,7 @@ Example:
     ;theme cartoon          Set theme to "cartoon"
 
     ;subscribe a            Subscribe to daily tsumego at advanced level
+    
 ```
 
 ![plot](./gallery/theme.png)
@@ -50,7 +53,8 @@ Example:
 - Create a new application at https://discord.com/developers/applications
 - Generate a token
 - Check "Message Content Intent"
-- Check "bot" in OAuth2 URL Generator 
+- Check "bot" in OAuth2 URL Generator / Scopes
+- Check "Send Messages" and "Manage Roles" in OAuth2 URL Generator / Bot Permissions
 - Click on the generated link
 
 ![plot](./gallery/token.png)
@@ -59,9 +63,13 @@ Example:
 
 ![plot](./gallery/OAuth2%20URL%20Generator.png)
 
+## Create a new OGS account
+- Create a new account at https://online-go.com/
+
 ## Setup
 
 - Paste your token into config.json 
+- Paste your tsumego-bot OGS account data into config.json
 
 ## Run
 `docker build -t tsumego-bot .`

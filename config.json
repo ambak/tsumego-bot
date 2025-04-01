@@ -1,6 +1,9 @@
 {
-	"token": "your_token",
+	"token": "YOUR_TOKEN",
 	"log_file": "/data/tsumego_bot.log",
 	"database": "/data/tsumego_bot.db",
-	"tsumego": "/data/tsumego"
+	"tsumego": "/data/tsumego",
+	"ogs_username": "YOUR_TSUMEGO_BOT_USERNAME",
+	"ogs_password": "PASSWORD",
+	"ogs_url": "https://online-go.com/player/YOUR_TSUMEGO_BOT_ID/"
 }

@@ -13,6 +13,7 @@ import (
 
 	"github.com/ambak/tsumego-bot/command"
 	"github.com/ambak/tsumego-bot/config"
+	"github.com/ambak/tsumego-bot/ogs"
 	"github.com/bwmarrin/discordgo"
 	"github.com/eatonphil/gosqlite"
 	"github.com/go-co-op/gocron/v2"
@@ -25,6 +26,7 @@ var (
 	themes    []string
 	levels    []string
 	scheduler gocron.Scheduler
+	ch        chan ogs.OGSchan
 )
 
 func init() {
@@ -33,12 +35,11 @@ func init() {
 	configFile, err := os.ReadFile(*configPath)
 	if err != nil {
 		log.Fatalln("Config not found.", err)
-		panic("Config not found.")
 	}
 	if err = json.Unmarshal(configFile, &cfg); err != nil {
 		log.Fatalln("Config error.", err)
-		panic("Config error.")
 	}
+	ch = make(chan ogs.OGSchan)
 }
 
 func main() {
@@ -82,18 +83,30 @@ func main() {
 	}
 	defer conn.Close()
 	err = conn.Exec(`CREATE TABLE IF NOT EXISTS theme(name TEXT, theme TEXT, PRIMARY KEY (name))`)
+	if err != nil {
+		log.Fatalln("database create table error", err)
+		return
+	}
+
 	err = conn.Exec(`CREATE TABLE IF NOT EXISTS subscribe(name TEXT, time DATETIME, level TEXT, PRIMARY KEY (name))`)
 	if err != nil {
 		log.Fatalln("database create table error", err)
 		return
 	}
 
+	err = conn.Exec(`CREATE TABLE IF NOT EXISTS ogs(name TEXT, time DATETIME, ogs_id TEXT, ogs_username TEXT, 
+					ogs_ranking REAL, ogs_deviation REAL, ranking_name TEXT, guild_id TEXT, PRIMARY KEY (name, guild_id))`)
+	if err != nil {
+		log.Fatalln("database create table error", err)
+		return
+	}
+
 	dg, err := discordgo.New("Bot " + cfg.Token)
-	defer dg.Close()
 	if err != nil {
 		log.Fatalln("error creating Discord session,", err)
 		return
 	}
+	defer dg.Close()
 	dg.AddHandler(messageCreate)
 	dg.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentsDirectMessages
 	err = dg.Open()
@@ -121,21 +134,62 @@ func main() {
 		var ttime string
 		var level string
 		err = stmt.Scan(&name, &ttime, &level)
+		if err != nil {
+			log.Fatalln(err)
+		}
 		t, _ := time.Parse(time.RFC1123, ttime)
-		scheduler.NewJob(
+		_, err = scheduler.NewJob(
 			gocron.DailyJob(
 				1,
-				gocron.NewAtTimes(gocron.NewAtTime(uint(t.UTC().Hour()), uint(t.UTC().Minute()), uint(t.UTC().Second()))),
+				gocron.NewAtTimes(gocron.NewAtTime(uint(t.Hour()), uint(t.Minute()), uint(t.Second()))),
 			),
 			gocron.NewTask(command.Tsumego, dg, &discordgo.MessageCreate{}, []string{}, levels, problems, &cfg, conn, themes, name, level),
 			gocron.WithTags(name),
 		)
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}
+	stmt, err = conn.Prepare(`SELECT name, time, guild_id FROM ogs`)
+	if err != nil {
+		log.Println("database error subscribe init", err)
+	}
+	for {
+		hasRow, err := stmt.Step()
+		if err != nil {
+			log.Println("database error ogs", err)
+			return
+		}
+		if !hasRow {
+			break
+		}
+		var name string
+		var ttime string
+		var guildID string
+		err = stmt.Scan(&name, &ttime, &guildID)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		t, _ := time.Parse(time.RFC1123, ttime)
+		_, err = scheduler.NewJob(
+			gocron.DailyJob(
+				1,
+				gocron.NewAtTimes(gocron.NewAtTime(uint(t.Hour()), uint(t.Minute()), uint(t.Second()))),
+			),
+			gocron.NewTask(ogs.UpdatePlayerRanking, name, guildID, conn, dg),
+			gocron.WithTags(name+guildID+"OGS"),
+		)
+		if err != nil {
+			log.Fatalln(err)
+		}
 	}
 	scheduler.Start()
 
+	go ogs.AuthOGS(dg, &cfg, conn, &scheduler, ch)
+
 	log.Println("Bot is now running.")
 	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
+	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
 	log.Fatalln("App EXIT")
 }
@@ -158,6 +212,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			command.Subscribe(s, m, conn, argv, levels, problems, &cfg, themes, &scheduler)
 		} else if argv[0] == ";unsubscribe" {
 			command.Unsubscribe(s, m, conn, &scheduler)
+		} else if argv[0] == ";link" {
+			command.Link(s, m, conn, argv, &cfg, &scheduler, ch)
 		} else {
 			command.Help(s, m)
 		}

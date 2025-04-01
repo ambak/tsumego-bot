@@ -5,6 +5,7 @@ COPY main.go go.mod go.sum ./
 COPY command ./command
 COPY config ./config
 COPY sgf ./sgf
+COPY ogs ./ogs
 RUN go build -o tsumego-bot
 
 

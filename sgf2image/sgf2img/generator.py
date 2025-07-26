@@ -271,8 +271,8 @@ class GameImageGenerator(BoardImageGenerator, StoneImageGenerator):
 
         for row, col in setups[0]:
             if top <= row <= bottom and left <= col <= right:
-                x_offset = random.randint(-1, 1)
-                y_offset = random.randint(-1, 1)
+                x_offset = 0
+                y_offset = 0
                 board_image.paste(
                     black_img,
                     (grid_pos[row][col].x - stone_offset + x_offset, grid_pos[row][col].y - stone_offset + y_offset),
@@ -282,8 +282,8 @@ class GameImageGenerator(BoardImageGenerator, StoneImageGenerator):
         white_img = self.get_stone_image('w', board.side)
         for row, col in setups[1]:
             if top <= row <= bottom and left <= col <= right:
-                x_offset = random.randint(-1, 1)
-                y_offset = random.randint(-1, 1)
+                x_offset = 0
+                y_offset = 0
                 board_image.paste(
                     white_img,
                     (grid_pos[row][col].x - stone_offset + x_offset, grid_pos[row][col].y - stone_offset + y_offset),
@@ -307,8 +307,8 @@ class GameImageGenerator(BoardImageGenerator, StoneImageGenerator):
                 # draw stone
                 if color:
                     stone_image = self.get_stone_image(color, board.side)
-                    x_offset = random.randint(-1, 1)
-                    y_offset = random.randint(-1, 1)
+                    x_offset = 0
+                    y_offset = 0
                     board_image.paste(
                         stone_image,
                         (

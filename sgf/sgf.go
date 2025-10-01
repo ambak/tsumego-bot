@@ -23,6 +23,10 @@ func SgfSize(name string) (string, error) {
 			sz, err = strconv.Atoi(s[i+3 : i+5])
 			if err != nil {
 				sz = 19
+				sz, err = strconv.Atoi(s[i+3 : i+4])
+				if err != nil {
+					sz = 19
+				}
 			}
 		}
 		if (!setblack || !setwhite) && s[i] == 'A' && (s[i+1] == 'B' || s[i+1] == 'W') && s[i+2] == '[' {
@@ -63,5 +67,5 @@ func SgfSize(name string) (string, error) {
 	top = max(top, int(minsecond-byte('a'))-3)
 	right = min(right, int(maxfirst-byte('a'))+3)
 	bottom = min(bottom, int(maxsecond-byte('a'))+3)
-	return strconv.Itoa(left) + "," + strconv.Itoa(sz+1-bottom) + "," + strconv.Itoa(right) + "," + strconv.Itoa(sz-top), nil
+	return strconv.Itoa(left) + "," + strconv.Itoa(sz-bottom) + "," + strconv.Itoa(right) + "," + strconv.Itoa(sz-top), nil
 }

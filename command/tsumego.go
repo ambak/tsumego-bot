@@ -92,7 +92,7 @@ func Tsumego(s *discordgo.Session, m *discordgo.MessageCreate, argv []string, le
 		"--end", "0", "--part_rect", part_rect, "--theme", theme, path, pictureName+".jpg")
 	_, err = out.Output()
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln(err, tsumegoID)
 	}
 	fileBytes, _ := os.Open("sgf2image/" + pictureName + ".jpg")
 	_, err = s.ChannelFileSendWithMessage(channel, msg, "tsumego.jpg", fileBytes)
